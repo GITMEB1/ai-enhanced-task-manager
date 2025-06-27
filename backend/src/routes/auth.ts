@@ -17,17 +17,38 @@ export const authenticateToken = (req: express.Request, res: express.Response, n
     });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET || 'development-secret', (err: any, user: any) => {
-    if (err) {
-      return res.status(403).json({
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'development-secret') as any;
+    
+    // Add the user info to the request object
+    (req as any).user = {
+      id: decoded.userId,
+      userId: decoded.userId,
+      email: decoded.email
+    };
+    
+    next();
+  } catch (err: any) {
+    console.error('JWT verification failed:', err.message);
+    
+    // More specific error handling
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        error: 'Token expired',
+        message: 'Your session has expired. Please log in again.'
+      });
+    } else if (err.name === 'JsonWebTokenError') {
+      return res.status(401).json({
         error: 'Invalid token',
-        message: 'Token is invalid or expired'
+        message: 'Invalid authentication token. Please log in again.'
+      });
+    } else {
+      return res.status(401).json({
+        error: 'Authentication failed',
+        message: 'Authentication verification failed. Please log in again.'
       });
     }
-
-    (req as any).user = user;
-    next();
-  });
+  }
 };
 
 // POST /api/auth/register
@@ -60,11 +81,11 @@ router.post('/register', async (req, res) => {
       settings: {}
     });
 
-    // Generate JWT token
+    // Generate JWT token with longer expiration for VPN users
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, email: user.email, name: user.name },
       process.env.JWT_SECRET || 'development-secret',
-      { expiresIn: '7d' }
+      { expiresIn: '30d' } // Extended to 30 days for better VPN compatibility
     );
 
     res.status(201).json({
@@ -118,11 +139,11 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Generate JWT token
+    // Generate JWT token with longer expiration for VPN users
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, email: user.email, name: user.name },
       process.env.JWT_SECRET || 'development-secret',
-      { expiresIn: '7d' }
+      { expiresIn: '30d' } // Extended to 30 days for better VPN compatibility
     );
 
     res.json({

@@ -6,7 +6,7 @@ import { Toaster } from 'react-hot-toast'
 
 import App from './App.tsx'
 import ErrorBoundary from './components/ErrorBoundary.tsx'
-import { registerSW } from 'virtual:pwa-register'
+// PWA registration removed for now
 
 import './index.css'
 
@@ -25,17 +25,10 @@ const queryClient = new QueryClient({
   },
 })
 
-// Register service worker for PWA
+// Service worker registration (basic version)
 if ('serviceWorker' in navigator) {
-  const updateSW = registerSW({
-    onNeedRefresh() {
-      if (confirm('New content available. Reload?')) {
-        updateSW(true)
-      }
-    },
-    onOfflineReady() {
-      console.log('App ready to work offline')
-    },
+  navigator.serviceWorker.register('/sw.js').catch(() => {
+    // Service worker registration failed - this is optional
   })
 }
 
@@ -95,8 +88,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 // Performance monitoring
 if (import.meta.env.DEV) {
   // Enable React DevTools profiler in development
-  window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = window.__REACT_DEVTOOLS_GLOBAL_HOOK__ || {}
-  window.__REACT_DEVTOOLS_GLOBAL_HOOK__.supportsFiber = true
+  ;(window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__ = (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__ || {}
+  ;(window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__.supportsFiber = true
 }
 
 // Accessibility announcements

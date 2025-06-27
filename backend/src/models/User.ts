@@ -64,8 +64,8 @@ export class UserModel {
     if (isDevelopmentMode) {
       return {
         id,
-        name: 'Test User',
-        email: 'test@example.com',
+        name: 'Admin User',
+        email: 'admin@localhost',
         settings: {},
         created_at: new Date(),
         updated_at: new Date(),
@@ -83,11 +83,11 @@ export class UserModel {
   static async findByEmail(email: string): Promise<IUser | null> {
     const isDevelopmentMode = process.env.NODE_ENV === 'development' || !process.env.DB_HOST || !db;
     if (isDevelopmentMode) {
-      if (email.toLowerCase() === 'test@example.com') {
+      if (email.toLowerCase() === 'admin@localhost') {
         return {
           id: '1',
-          name: 'Test User',
-          email: 'test@example.com',
+          name: 'Admin User',
+          email: 'admin@localhost',
           password_hash: '$2a$12$mockedhashforpassword123', // mock hash
           settings: {},
           created_at: new Date(),
@@ -110,8 +110,8 @@ export class UserModel {
     if (isDevelopmentMode) {
       return {
         id,
-        name: updates.name || 'Test User',
-        email: updates.email || 'test@example.com',
+        name: updates.name || 'Admin User',
+        email: updates.email || 'admin@localhost',
         settings: updates.settings || {},
         created_at: new Date(),
         updated_at: new Date(),
@@ -157,11 +157,11 @@ export class UserModel {
   static async verifyPassword(email: string, password: string): Promise<IUser | null> {
     const isDevelopmentMode = process.env.NODE_ENV === 'development' || !process.env.DB_HOST || !db;
     if (isDevelopmentMode) {
-      if (email.toLowerCase() === 'test@example.com' && password === 'password123') {
+      if (email.toLowerCase() === 'admin@localhost' && password === 'admin123') {
         return {
           id: '1',
-          name: 'Test User',
-          email: 'test@example.com',
+          name: 'Admin User',
+          email: 'admin@localhost',
           settings: {},
           created_at: new Date(),
           updated_at: new Date(),

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTaskStore } from '../../stores/taskStore';
 import { Task, CreateTaskData, UpdateTaskData } from '../../services/tasks';
-import { X, Plus, Calendar } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface TaskFormProps {
   task?: Task;

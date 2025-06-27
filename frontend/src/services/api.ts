@@ -29,12 +29,28 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    console.error('API Error:', error.response?.data || error.message);
+    
+    // Only redirect to login on authentication errors, not network errors
+    if (error.response?.status === 401 && error.response?.data?.error) {
+      console.log('Authentication failed, redirecting to login');
       localStorage.removeItem('auth-storage');
       window.location.href = '/login';
     }
+    
     return Promise.reject(error);
   }
 );
+
+// Add integration endpoints
+export const integrationAPI = {
+  getStatus: () => api.get('/integrations/status'),
+  getInsights: () => api.get('/integrations/insights'),
+  acceptSuggestion: (data: any) => api.post('/integrations/suggestions/accept', data),
+  getGmailAuth: () => api.get('/integrations/gmail/auth'),
+  getEmails: (params?: any) => api.get('/integrations/gmail/emails', { params }),
+  convertEmailsToTasks: (emailIds: string[]) => 
+    api.post('/integrations/gmail/convert-to-tasks', { email_ids: emailIds })
+};
 
 export default api; 

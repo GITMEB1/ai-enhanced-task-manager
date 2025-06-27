@@ -134,7 +134,9 @@ export const useAuthStore = create<AuthStore>()(
           });
 
           if (!response.ok) {
-            throw new Error('Authentication failed');
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Auth check failed:', errorData);
+            throw new Error(errorData.message || 'Authentication failed');
           }
 
           const data = await response.json();
@@ -146,13 +148,22 @@ export const useAuthStore = create<AuthStore>()(
           });
 
         } catch (error) {
-          // Token is invalid, clear auth state
-          set({
-            user: null,
-            token: null,
-            isLoading: false,
-            error: null,
-          });
+          console.error('checkAuth error:', error);
+          // Only clear auth state if it's an authentication error, not a network error
+          if (error instanceof Error && error.message.includes('Authentication')) {
+            set({
+              user: null,
+              token: null,
+              isLoading: false,
+              error: null,
+            });
+          } else {
+            // Network error - keep auth state but stop loading
+            set({
+              isLoading: false,
+              error: null,
+            });
+          }
         }
       },
 

@@ -19,6 +19,8 @@ import taskRoutes from './routes/tasks';
 import projectRoutes from './routes/projects';
 import tagRoutes from './routes/tags';
 import notificationRoutes from './routes/notifications';
+import journalRoutes from './routes/journal';
+import integrationRoutes from './routes/integrations';
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -97,6 +99,8 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/journal', journalRoutes);
+app.use('/api/integrations', integrationRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

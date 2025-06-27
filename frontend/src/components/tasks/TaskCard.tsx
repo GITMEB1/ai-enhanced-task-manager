@@ -1,7 +1,7 @@
 import React from 'react';
 import { Task } from '../../services/tasks';
 import { useTaskStore } from '../../stores/taskStore';
-import { Calendar, Tag, Clock, User } from 'lucide-react';
+import { Calendar, Tag, User } from 'lucide-react';
 
 interface TaskCardProps {
   task: Task;

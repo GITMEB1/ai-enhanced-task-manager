@@ -47,14 +47,14 @@ export const ProjectsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Projects
-          </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Organize your tasks into projects
-          </p>
-        </div>
-        
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Projects
+        </h1>
+        <p className="mt-2 text-gray-600 dark:text-gray-400">
+          Organize your tasks into projects
+        </p>
+      </div>
+
         <div className="flex items-center gap-3">
           <button
             onClick={handleRefresh}
