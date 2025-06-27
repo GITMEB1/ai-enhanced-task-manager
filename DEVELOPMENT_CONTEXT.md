@@ -62,14 +62,16 @@ Token: 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
 - **Tasks API**: Full CRUD with filtering, search, subtasks, tags
 - **Projects API**: Full CRUD with archive/unarchive, statistics
 - **Tags API**: Full CRUD with color management, search
+- **Journal API**: Full CRUD with 9 entry types, mood tracking, analytics
 - **Development Mode**: Works without database, uses mock data
 
 #### **Frontend (100% Complete)**
 - **Task Management**: TaskList, TaskCard, TaskForm, TaskFilters
 - **Project Management**: ProjectList, ProjectCard, ProjectForm
 - **Tag Management**: TagList, TagForm with color picker
+- **Journal Management**: JournalPage with entries, analytics, quick entry
 - **Navigation**: Complete routing and layout
-- **State Management**: Zustand stores for tasks, projects, tags, auth
+- **State Management**: Zustand stores for tasks, projects, tags, journal, auth
 - **UI Components**: Responsive design with Tailwind CSS
 
 #### **Integration (100% Complete)**
@@ -137,10 +139,10 @@ frontend/
 
 ## 🔐 **AUTHENTICATION & SECURITY**
 
-### **Test User Credentials**
+### **Development Credentials**
 ```javascript
-Email: test@example.com
-Password: password123
+Email: admin@localhost
+Password: admin123
 ```
 
 ### **JWT Token Handling**
@@ -198,6 +200,17 @@ const TAG_COLORS = [
 POST /api/auth/register  // Register new user
 POST /api/auth/login     // Login user, returns JWT
 GET  /api/auth/me        // Get current user info
+```
+
+### **Journal Entries**
+```javascript
+GET    /api/journal           // Get all journal entries with filtering
+POST   /api/journal           // Create new journal entry
+GET    /api/journal/:id       // Get specific journal entry
+PUT    /api/journal/:id       // Update journal entry
+DELETE /api/journal/:id       // Delete journal entry
+POST   /api/journal/quick     // Quick entry creation
+GET    /api/journal/analytics // Get analytics and insights
 ```
 
 ### **Tasks**
