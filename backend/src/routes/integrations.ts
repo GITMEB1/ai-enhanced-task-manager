@@ -23,7 +23,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 
 // Initialize RAG service if OpenAI key is available
 if (process.env.OPENAI_API_KEY) {
-  ragService = new RAGService(process.env.OPENAI_API_KEY);
+  ragService = new RAGService();
 }
 
 // AI-powered insights endpoint
@@ -71,9 +71,19 @@ router.get('/gmail/auth', authenticateToken, (req, res) => {
       });
     }
 
+    // Check if already authenticated
+    if (gmailService.isAuthenticatedUser()) {
+      return res.json({
+        authenticated: true,
+        message: 'Gmail is already authenticated',
+        setup_required: false
+      });
+    }
+
     const authUrl = gmailService.getAuthUrl();
     res.json({
       auth_url: authUrl,
+      authenticated: false,
       message: 'Visit the auth URL to authorize Gmail access',
       setup_required: false
     });
@@ -83,31 +93,35 @@ router.get('/gmail/auth', authenticateToken, (req, res) => {
   }
 });
 
-// Gmail OAuth callback
-router.get('/gmail/callback', authenticateToken, async (req, res) => {
+// Gmail OAuth callback (no auth required - this is the OAuth return endpoint)
+router.get('/gmail/callback', async (req, res) => {
   try {
-    const { code } = req.query;
+    const { code, error: oauthError, state } = req.query;
     
     if (!gmailService) {
       return res.status(400).json({ error: 'Gmail service not initialized' });
     }
 
+    // Handle OAuth errors
+    if (oauthError) {
+      console.error('OAuth error:', oauthError);
+      return res.redirect(`http://localhost:5173/integrations?error=${encodeURIComponent(oauthError as string)}`);
+    }
+
     if (!code) {
-      return res.status(400).json({ error: 'Authorization code required' });
+      return res.redirect('http://localhost:5173/integrations?error=no_authorization_code');
     }
 
     const tokens = await gmailService.exchangeCodeForTokens(code as string);
     
-    // In a real app, you'd store these tokens securely for the user
-    // For now, we'll just confirm the auth worked
-    res.json({
-      message: 'Gmail authorization successful',
-      tokens_received: true,
-      next_steps: 'You can now use Gmail integration features'
-    });
+    // Set the tokens in the Gmail service for this session
+    gmailService.setTokens(tokens);
+    
+    // Redirect back to the frontend with success
+    res.redirect('http://localhost:5173/integrations?gmail_auth=success');
   } catch (error) {
     console.error('Error handling Gmail callback:', error);
-    res.status(500).json({ error: 'Failed to complete Gmail authorization' });
+    res.redirect(`http://localhost:5173/integrations?error=${encodeURIComponent('Failed to complete Gmail authorization')}`);
   }
 });
 
@@ -119,12 +133,15 @@ router.get('/gmail/emails', authenticateToken, async (req, res) => {
     }
 
     const maxResults = parseInt(req.query.max_results as string) || 10;
+    const isAuthenticated = gmailService.isAuthenticatedUser();
     const emails = await gmailService.getActionableEmails(maxResults);
     
     res.json({
       emails,
       count: emails.length,
-      service_status: emails.length > 0 ? 'connected' : 'mock_data'
+      service_status: isAuthenticated ? 'authenticated' : 'mock_data',
+      authenticated: isAuthenticated,
+      message: isAuthenticated ? 'Real Gmail data' : 'Mock data - please authenticate with Gmail first'
     });
   } catch (error) {
     console.error('Error fetching Gmail emails:', error);
@@ -405,7 +422,8 @@ router.get('/status', authenticateToken, (req, res) => {
   res.json({
     gmail_service: {
       available: gmailService !== null,
-      configured: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
+      configured: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+      authenticated: gmailService?.isAuthenticatedUser() || false
     },
     rag_service: {
       available: ragService !== null,
@@ -414,7 +432,7 @@ router.get('/status', authenticateToken, (req, res) => {
     },
     features: {
       ai_insights: ragService?.isReady() || false,
-      gmail_integration: gmailService !== null,
+      gmail_integration: gmailService?.isAuthenticatedUser() || false,
       basic_patterns: true
     }
   });

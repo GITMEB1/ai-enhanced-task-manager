@@ -440,6 +440,10 @@ export class RAGService {
    */
   private async enhanceInsightsWithAI(insights: AIInsight[], userData: any): Promise<AIInsight[]> {
     try {
+      if (!this.openai) {
+        return this.getMockInsights();
+      }
+
       // Prepare context from user data
       const context = this.prepareUserContext(userData);
       

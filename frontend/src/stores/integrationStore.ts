@@ -32,6 +32,7 @@ interface ServiceStatus {
   gmail_service: {
     available: boolean;
     configured: boolean;
+    authenticated: boolean;
   };
   rag_service: {
     available: boolean;
@@ -256,11 +257,11 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
       set({ 
         emails: response.data.emails || [],
         emailsLoading: false,
-        gmailConnected: response.data.service_status === 'connected'
+        gmailConnected: response.data.authenticated || false
       });
     } catch (error) {
       console.error('Failed to fetch emails:', error);
-      set({ emailsLoading: false });
+      set({ emailsLoading: false, gmailConnected: false });
     }
   },
 

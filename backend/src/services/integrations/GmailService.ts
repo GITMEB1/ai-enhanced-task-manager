@@ -58,6 +58,8 @@ export class GmailService {
   private oauth2Client: OAuth2Client;
   private gmail: any;
   private calendar: any;
+  private isAuthenticated: boolean = false;
+  private userTokens: any = null;
 
   constructor(config: GmailConfig) {
     this.oauth2Client = new google.auth.OAuth2(
@@ -107,6 +109,24 @@ export class GmailService {
    */
   setTokens(tokens: any): void {
     this.oauth2Client.setCredentials(tokens);
+    this.userTokens = tokens;
+    this.isAuthenticated = true;
+  }
+
+  /**
+   * Check if the service is authenticated
+   */
+  isAuthenticatedUser(): boolean {
+    return this.isAuthenticated && this.userTokens !== null;
+  }
+
+  /**
+   * Clear authentication
+   */
+  clearAuthentication(): void {
+    this.isAuthenticated = false;
+    this.userTokens = null;
+    this.oauth2Client.setCredentials({});
   }
 
   /**
@@ -114,6 +134,12 @@ export class GmailService {
    */
   async getActionableEmails(maxResults: number = 10): Promise<EmailToTask[]> {
     try {
+      // Check if authenticated first
+      if (!this.isAuthenticatedUser()) {
+        log.warn('Gmail service not authenticated, returning mock data');
+        return this.getMockEmails();
+      }
+
       // Search for emails with action-oriented keywords
       const query = 'is:unread (TODO OR "follow up" OR "action required" OR "please review" OR "deadline" OR "urgent")';
       

@@ -1,18 +1,52 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useIntegrationStore } from '../stores/integrationStore';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import GmailIntegration from '../components/integrations/GmailIntegration';
 
 const IntegrationsPage: React.FC = () => {
+  const [authSuccess, setAuthSuccess] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  
   const {
     serviceStatus,
     serviceStatusLoading,
-    fetchServiceStatus
+    fetchServiceStatus,
+    fetchEmails
   } = useIntegrationStore();
 
   useEffect(() => {
     fetchServiceStatus();
-  }, [fetchServiceStatus]);
+    
+    // Check for OAuth callback parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const gmailAuth = urlParams.get('gmail_auth');
+    const error = urlParams.get('error');
+    
+    if (gmailAuth === 'success') {
+      console.log('Gmail authentication successful');
+      setAuthSuccess(true);
+      // Refresh service status and emails
+      setTimeout(() => {
+        fetchServiceStatus();
+        fetchEmails();
+      }, 1000);
+      
+      // Hide success message after 5 seconds
+      setTimeout(() => setAuthSuccess(false), 5000);
+      
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (error) {
+      console.error('Gmail authentication error:', error);
+      setAuthError(decodeURIComponent(error));
+      
+      // Hide error message after 10 seconds
+      setTimeout(() => setAuthError(null), 10000);
+      
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [fetchServiceStatus, fetchEmails]);
 
   if (serviceStatusLoading) {
     return (
@@ -33,6 +67,39 @@ const IntegrationsPage: React.FC = () => {
           Connect external services to enhance your task management experience
         </p>
       </div>
+
+      {/* Success Message */}
+      {authSuccess && (
+        <div className="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-800 rounded-lg p-4">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-green-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <span className="text-green-800 dark:text-green-200 font-medium">
+              Gmail authentication successful! You can now access your real emails.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {authError && (
+        <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-red-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <span className="text-red-800 dark:text-red-200 font-medium">
+                Gmail authentication failed: 
+              </span>
+              <span className="text-red-700 dark:text-red-300 ml-1">
+                {authError}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Service Status Overview */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
@@ -79,22 +146,27 @@ const IntegrationsPage: React.FC = () => {
                   📧 Gmail Integration
                 </h3>
                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  serviceStatus.gmail_service.configured 
+                  serviceStatus.gmail_service.authenticated 
                     ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    : serviceStatus.gmail_service.configured
+                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                     : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
                 }`}>
-                  {serviceStatus.gmail_service.configured ? 'Configured' : 'Not Configured'}
+                  {serviceStatus.gmail_service.authenticated ? 'Authenticated' : serviceStatus.gmail_service.configured ? 'Configured' : 'Not Configured'}
                 </span>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                {serviceStatus.gmail_service.configured 
-                  ? 'Gmail integration is available for email-to-task conversion'
+                {serviceStatus.gmail_service.authenticated 
+                  ? 'Gmail integration is active and authenticated'
+                  : serviceStatus.gmail_service.configured 
+                  ? 'Gmail is configured but requires authentication'
                   : 'Configure Google OAuth credentials to enable Gmail features'
                 }
               </p>
               <div className="text-xs text-gray-500 dark:text-gray-400">
                 Available: {serviceStatus.gmail_service.available ? 'Yes' : 'No'} • 
-                Configured: {serviceStatus.gmail_service.configured ? 'Yes' : 'No'}
+                Configured: {serviceStatus.gmail_service.configured ? 'Yes' : 'No'} •
+                Authenticated: {serviceStatus.gmail_service.authenticated ? 'Yes' : 'No'}
               </div>
             </div>
           </div>
