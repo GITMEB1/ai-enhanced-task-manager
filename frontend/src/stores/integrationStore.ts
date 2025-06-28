@@ -58,6 +58,30 @@ interface ActionableEmail {
   estimatedDuration?: number;
 }
 
+interface EmailThread {
+  id: string;
+  threadId: string;
+  subject: string;
+  participants: string[];
+  messageCount: number;
+  lastMessage: string;
+  snippet: string;
+  labels: string[];
+}
+
+interface EmailContext {
+  summary: string;
+  keyInsights: string[];
+  participants: string[];
+  timespan: {
+    start: string;
+    end: string;
+  };
+  actionItems: string[];
+  decisions: string[];
+  nextSteps: string[];
+}
+
 interface IntegrationState {
   // Service Status
   serviceStatus: ServiceStatus | null;
@@ -79,6 +103,12 @@ interface IntegrationState {
   gmailConnected: boolean;
   selectedEmailIds: string[];
 
+  // Email Threads for Project Context
+  emailThreads: EmailThread[];
+  searchingThreads: boolean;
+  analyzingContext: boolean;
+  emailContext: EmailContext | null;
+
   // Loading states
   acceptingSuggestion: boolean;
   convertingEmails: boolean;
@@ -94,6 +124,12 @@ interface IntegrationState {
   toggleEmailSelection: (emailId: string) => void;
   selectAllEmails: () => void;
   clearEmailSelection: () => void;
+  
+  // Email Thread Actions
+  searchEmailThreads: (query: string, maxResults?: number) => Promise<EmailThread[]>;
+  analyzeEmailContext: (threadIds: string[]) => Promise<EmailContext>;
+  createProjectWithContext: (projectData: any) => Promise<void>;
+  
   clearError: () => void;
 }
 
@@ -113,6 +149,10 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
   emailsLoading: false,
   gmailConnected: false,
   selectedEmailIds: [],
+  emailThreads: [],
+  searchingThreads: false,
+  analyzingContext: false,
+  emailContext: null,
   acceptingSuggestion: false,
   convertingEmails: false,
 
@@ -258,6 +298,52 @@ export const useIntegrationStore = create<IntegrationState>((set, get) => ({
 
   clearEmailSelection: () => {
     set({ selectedEmailIds: [] });
+  },
+
+  searchEmailThreads: async (query: string, maxResults?: number) => {
+    set({ searchingThreads: true });
+    try {
+      const response = await integrationAPI.searchEmailThreads(query, maxResults);
+      const threads = response.data.threads || [];
+      set({ 
+        emailThreads: threads,
+        searchingThreads: false
+      });
+      return threads;
+    } catch (error) {
+      console.error('Failed to search email threads:', error);
+      set({ searchingThreads: false });
+      return [];
+    }
+  },
+
+  analyzeEmailContext: async (threadIds: string[]) => {
+    set({ analyzingContext: true });
+    try {
+      const response = await integrationAPI.analyzeEmailContext(threadIds);
+      const context = response.data.context;
+      set({ 
+        emailContext: context,
+        analyzingContext: false
+      });
+      return context;
+    } catch (error) {
+      console.error('Failed to analyze email context:', error);
+      set({ analyzingContext: false });
+      throw error;
+    }
+  },
+
+  createProjectWithContext: async (projectData: any) => {
+    set({ convertingEmails: true });
+    try {
+      await integrationAPI.createProjectWithContext(projectData);
+      set({ convertingEmails: false });
+    } catch (error) {
+      console.error('Failed to create project with context:', error);
+      set({ convertingEmails: false });
+      throw error;
+    }
   },
 
   clearError: () => {

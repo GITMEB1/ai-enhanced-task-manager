@@ -89,7 +89,7 @@ const SettingsPage: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div>
+    <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
         <p className="text-gray-600 dark:text-gray-400">
           Manage your preferences and configure the application
@@ -370,6 +370,6 @@ const SettingsPage: React.FC = () => {
       </div>
     </div>
   );
-};
+}; 
 
 export default SettingsPage; 

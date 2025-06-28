@@ -50,7 +50,21 @@ export const integrationAPI = {
   getGmailAuth: () => api.get('/integrations/gmail/auth'),
   getEmails: (params?: any) => api.get('/integrations/gmail/emails', { params }),
   convertEmailsToTasks: (emailIds: string[]) => 
-    api.post('/integrations/gmail/convert-to-tasks', { email_ids: emailIds })
+    api.post('/integrations/gmail/convert-to-tasks', { email_ids: emailIds }),
+  
+  // Email thread search and context analysis
+  searchEmailThreads: (query: string, maxResults?: number) => 
+    api.get('/integrations/gmail/search-threads', { 
+      params: { query, max_results: maxResults } 
+    }),
+  getEmailThread: (threadId: string) => 
+    api.get(`/integrations/gmail/thread/${threadId}`),
+  analyzeEmailContext: (threadIds: string[]) => 
+    api.post('/integrations/gmail/analyze-context', { thread_ids: threadIds }),
+  
+  // Enhanced project creation
+  createProjectWithContext: (projectData: any) => 
+    api.post('/integrations/projects/create-with-context', projectData)
 };
 
 export default api; 

@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { log } from '../../utils/logger';
 import { TaskModel } from '../../models/Task';
 import { JournalEntryModel } from '../../models/JournalEntry';
 import { ProjectModel } from '../../models/Project';
@@ -33,15 +34,17 @@ export class RAGService {
   private openai: OpenAI | null = null;
   private isConfigured: boolean = false;
 
-  constructor(apiKey?: string) {
-    if (apiKey) {
-      try {
-        this.openai = new OpenAI({ apiKey });
+  constructor() {
+    try {
+      if (process.env.OPENAI_API_KEY) {
+        this.openai = new OpenAI({
+          apiKey: process.env.OPENAI_API_KEY,
+        });
         this.isConfigured = true;
-      } catch (error) {
-        console.error('Error initializing OpenAI:', error);
-        this.isConfigured = false;
       }
+    } catch (error) {
+      log.error('Error initializing OpenAI client', { error: (error as Error).message });
+      this.isConfigured = false;
     }
   }
 
@@ -96,7 +99,7 @@ export class RAGService {
 
       return insights;
     } catch (error) {
-      console.error('Error generating insights:', error);
+      log.externalApiCall('OpenAI', 'generateProductivityInsights', false, undefined, error as Error);
       return this.getMockInsights();
     }
   }
@@ -132,7 +135,7 @@ export class RAGService {
 
       return suggestions.slice(0, 5); // Limit to 5 suggestions
     } catch (error) {
-      console.error('Error generating task suggestions:', error);
+      log.externalApiCall('OpenAI', 'generateTaskSuggestions', false, undefined, error as Error);
       return this.getMockTaskSuggestions();
     }
   }
@@ -198,13 +201,13 @@ export class RAGService {
         type: "learning",
         follow_up_questions: [
           "What sparked your interest in this topic?",
-          "What would you like to learn next?"
+          "How will this knowledge help you grow?"
         ]
       });
 
-      return prompts.slice(0, 3); // Return top 3 prompts
+      return prompts.slice(0, 3); // Limit to 3 prompts
     } catch (error) {
-      console.error('Error generating journal prompts:', error);
+      log.externalApiCall('OpenAI', 'generateJournalPrompts', false, undefined, error as Error);
       return this.getMockJournalPrompts();
     }
   }
@@ -436,9 +439,67 @@ export class RAGService {
    * Enhance insights with AI (when OpenAI is available)
    */
   private async enhanceInsightsWithAI(insights: AIInsight[], userData: any): Promise<AIInsight[]> {
-    // This would use OpenAI to provide more sophisticated analysis
-    // For now, return the basic insights
-    return insights;
+    try {
+      // Prepare context from user data
+      const context = this.prepareUserContext(userData);
+      
+      const prompt = `
+        Analyze the following user productivity data and provide insights:
+        
+        Context: ${JSON.stringify(context, null, 2)}
+        
+        Please provide 3-5 actionable insights in the following JSON format:
+        [
+          {
+            "type": "productivity",
+            "title": "Insight Title",
+            "message": "Brief insight message",
+            "confidence": 0.8,
+            "actionable": true,
+            "suggested_actions": ["action1", "action2"]
+          }
+        ]
+        
+        Focus on:
+        1. Task completion patterns
+        2. Time management opportunities
+        3. Productivity trends
+        4. Workload balance
+        5. Mood-productivity correlations
+      `;
+
+      const response = await this.openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a productivity analysis expert. Provide actionable insights based on user data. Always respond with valid JSON.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7,
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (content) {
+        try {
+          const insights = JSON.parse(content);
+          return Array.isArray(insights) ? insights : [insights];
+        } catch (parseError) {
+          log.warn('Failed to parse OpenAI insights response', { content });
+          return this.getMockInsights();
+        }
+      }
+
+      return this.getMockInsights();
+    } catch (error) {
+      log.externalApiCall('OpenAI', 'enhanceInsightsWithAI', false, undefined, error as Error);
+      return this.getMockInsights();
+    }
   }
 
   /**
@@ -541,6 +602,130 @@ export class RAGService {
         ]
       }
     ];
+  }
+
+  /**
+   * Enhance project description using AI analysis of email context
+   */
+  async enhanceProjectDescription(
+    projectName: string, 
+    userDescription: string, 
+    emailContext: any
+  ): Promise<string> {
+    try {
+      if (!this.isReady() || !this.openai) {
+        return this.getBasicEnhancedDescription(projectName, userDescription, emailContext);
+      }
+
+      const prompt = `
+You are an expert project manager and AI assistant. I need you to create an enhanced project description by analyzing email context and user input.
+
+PROJECT NAME: ${projectName}
+USER DESCRIPTION: ${userDescription || 'No user description provided'}
+
+EMAIL CONTEXT ANALYSIS:
+- Summary: ${emailContext.summary}
+- Key Insights: ${emailContext.keyInsights?.join(', ') || 'None'}
+- Action Items: ${emailContext.actionItems?.join(', ') || 'None'}
+- Decisions Made: ${emailContext.decisions?.join(', ') || 'None'}
+- Participants: ${emailContext.participants?.join(', ') || 'None'}
+- Timespan: ${emailContext.timespan ? 
+  `${new Date(emailContext.timespan.start).toLocaleDateString()} to ${new Date(emailContext.timespan.end).toLocaleDateString()}` : 
+  'Unknown'
+}
+
+Please create a comprehensive project description that:
+1. Incorporates the user's original description (if provided)
+2. Summarizes the key context from email discussions
+3. Highlights important decisions and requirements
+4. Identifies key stakeholders and their roles
+5. Outlines next steps and action items
+6. Maintains a professional but accessible tone
+
+Structure the output as follows:
+- Project Overview (2-3 sentences)
+- Key Requirements & Objectives
+- Stakeholders & Participants  
+- Important Decisions & Context
+- Next Steps & Action Items
+
+Keep it concise but comprehensive (max 300 words). Focus on actionable information that will help project team members understand the context and objectives.
+`;
+
+      const response = await this.openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 500,
+        temperature: 0.7
+      });
+
+      const enhancedDescription = response.choices[0]?.message?.content;
+      
+      if (enhancedDescription) {
+        return enhancedDescription.trim();
+      } else {
+        return this.getBasicEnhancedDescription(projectName, userDescription, emailContext);
+      }
+    } catch (error) {
+      log.externalApiCall('OpenAI', 'enhanceProjectDescription', false, undefined, error as Error);
+      return this.getBasicEnhancedDescription(projectName, userDescription, emailContext);
+    }
+  }
+
+  /**
+   * Generate enhanced project description without AI (fallback)
+   */
+  private getBasicEnhancedDescription(
+    projectName: string, 
+    userDescription: string, 
+    emailContext: any
+  ): string {
+    let description = '';
+
+    // Start with user description if provided
+    if (userDescription && userDescription.trim()) {
+      description += `**Project Overview:**\n${userDescription.trim()}\n\n`;
+    }
+
+    // Add email context summary
+    if (emailContext.summary) {
+      description += `**Email Context:**\n${emailContext.summary}\n\n`;
+    }
+
+    // Add key insights
+    if (emailContext.keyInsights && emailContext.keyInsights.length > 0) {
+      description += `**Key Insights:**\n${emailContext.keyInsights.map((insight: string) => `• ${insight}`).join('\n')}\n\n`;
+    }
+
+    // Add participants
+    if (emailContext.participants && emailContext.participants.length > 0) {
+      description += `**Stakeholders:**\n${emailContext.participants.map((participant: string) => `• ${participant}`).join('\n')}\n\n`;
+    }
+
+    // Add decisions
+    if (emailContext.decisions && emailContext.decisions.length > 0) {
+      description += `**Key Decisions:**\n${emailContext.decisions.map((decision: string) => `• ${decision}`).join('\n')}\n\n`;
+    }
+
+    // Add action items
+    if (emailContext.actionItems && emailContext.actionItems.length > 0) {
+      description += `**Action Items:**\n${emailContext.actionItems.map((item: string) => `• ${item}`).join('\n')}\n\n`;
+    }
+
+    // Add timespan if available
+    if (emailContext.timespan) {
+      const startDate = new Date(emailContext.timespan.start).toLocaleDateString();
+      const endDate = new Date(emailContext.timespan.end).toLocaleDateString();
+      description += `**Timeline:**\nEmail discussions from ${startDate} to ${endDate}\n\n`;
+    }
+
+    return description.trim() || `Project: ${projectName}\n\nThis project was created with email context analysis.`;
+  }
+
+  private prepareUserContext(userData: any): any {
+    // Implement the logic to prepare user context based on the provided userData
+    // This is a placeholder and should be replaced with the actual implementation
+    return userData;
   }
 }
 

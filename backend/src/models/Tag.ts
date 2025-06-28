@@ -1,4 +1,5 @@
 import { db } from '../config/database';
+import { log } from '../utils/logger';
 
 // Check if we're in development mode without database connection
 const isDev = process.env.NODE_ENV === 'development' || !process.env.DB_HOST;
@@ -163,17 +164,14 @@ export class TagModel {
 
   // Get all tags for a user with task counts
   static async findByUser(userId: string): Promise<any[]> {
-    console.log('TagModel.findByUser called with userId:', userId);
-    console.log('NODE_ENV:', process.env.NODE_ENV);
-    console.log('DB_HOST:', process.env.DB_HOST);
-    console.log('db is null:', !db);
+    log.debug('TagModel.findByUser called', { userId });
     
     // Check if we're in development mode or if database is not available
     const isDevelopmentMode = process.env.NODE_ENV === 'development' || !process.env.DB_HOST || !db;
-    console.log('isDevelopmentMode:', isDevelopmentMode);
+    log.debug('Development mode check', { isDevelopmentMode, nodeEnv: process.env.NODE_ENV, hasDbHost: !!process.env.DB_HOST, hasDb: !!db });
     
     if (isDevelopmentMode) {
-      console.log('Returning mock tags for development mode');
+      log.info('Returning mock tags for development mode', { userId });
       // Return mock tags for development mode
       return [
         {
@@ -207,7 +205,7 @@ export class TagModel {
     }
 
     // This code should not be reached in development mode
-    console.log('Attempting database query...');
+    log.debug('Attempting database query for tags', { userId });
     try {
       if (!db) {
         throw new Error('Database not available');
@@ -218,10 +216,13 @@ export class TagModel {
         .where('user_id', userId)
         .orderBy('name', 'asc');
       
-      console.log('Database query successful, returning:', result.length, 'tags');
+      log.info('Database query successful for tags', { userId, count: result.length });
       return result;
     } catch (error) {
-      console.error('Database error in findByUser, falling back to mock data:', error);
+      log.error('Database error in findByUser, falling back to mock data', { 
+        userId, 
+        error: (error as Error).message 
+      });
       // Return mock tags as fallback
       return [
         {

@@ -11,6 +11,7 @@ export interface IProject {
   user_id: string;
   order_index: number;
   is_archived: boolean;
+  metadata?: Record<string, any>;
   created_at: Date;
   updated_at: Date;
 }
@@ -20,6 +21,7 @@ export interface ICreateProject {
   description?: string;
   color?: string;
   user_id: string;
+  metadata?: Record<string, any>;
 }
 
 export interface IUpdateProject {
@@ -46,6 +48,7 @@ export class ProjectModel {
         user_id: projectData.user_id,
         order_index: 0,
         is_archived: false,
+        metadata: projectData.metadata,
         created_at: new Date(),
         updated_at: new Date(),
       };
@@ -69,6 +72,7 @@ export class ProjectModel {
         user_id: projectData.user_id,
         order_index: (max_order || -1) + 1,
         is_archived: false,
+        metadata: projectData.metadata,
       })
       .returning('*');
 
@@ -89,6 +93,7 @@ export class ProjectModel {
         user_id: userId,
         order_index: 0,
         is_archived: false,
+        metadata: {},
         created_at: new Date(),
         updated_at: new Date(),
       };
@@ -174,6 +179,7 @@ export class ProjectModel {
         user_id: userId,
         order_index: 0,
         is_archived: updates.is_archived || false,
+        metadata: {},
         created_at: new Date(),
         updated_at: new Date(),
       };
@@ -301,6 +307,7 @@ export class ProjectModel {
           user_id: userId,
           order_index: 0,
           is_archived: false,
+          metadata: {},
           created_at: new Date(),
           updated_at: new Date(),
         }
@@ -330,6 +337,7 @@ export class ProjectModel {
           user_id: userId,
           order_index: 0,
           is_archived: false,
+          metadata: {},
           created_at: new Date(),
           updated_at: new Date(),
         }
@@ -414,6 +422,7 @@ export class ProjectModel {
         user_id: userId,
         order_index: 0,
         is_archived: false,
+        metadata: {},
         created_at: new Date(),
         updated_at: new Date(),
       };
@@ -429,6 +438,7 @@ export class ProjectModel {
       description: originalProject.description,
       color: originalProject.color,
       user_id: userId,
+      metadata: originalProject.metadata,
     });
 
     return duplicatedProject;

@@ -178,6 +178,176 @@ router.post('/gmail/convert-to-tasks', authenticateToken, async (req, res) => {
   }
 });
 
+// Search email threads for project context
+router.get('/gmail/search-threads', authenticateToken, async (req, res) => {
+  try {
+    if (!gmailService) {
+      return res.status(400).json({ error: 'Gmail service not initialized' });
+    }
+
+    const { query, max_results } = req.query;
+    
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ error: 'Search query is required' });
+    }
+
+    const maxResults = parseInt(max_results as string) || 20;
+    const threads = await gmailService.searchEmailThreads(query, maxResults);
+    
+    res.json({
+      threads,
+      count: threads.length,
+      query: query,
+      service_status: threads.length > 0 ? 'connected' : 'mock_data'
+    });
+  } catch (error) {
+    console.error('Error searching email threads:', error);
+    res.status(500).json({ error: 'Failed to search email threads' });
+  }
+});
+
+// Get specific email thread details
+router.get('/gmail/thread/:threadId', authenticateToken, async (req, res) => {
+  try {
+    if (!gmailService) {
+      return res.status(400).json({ error: 'Gmail service not initialized' });
+    }
+
+    const { threadId } = req.params;
+    const thread = await gmailService.getEmailThread(threadId);
+    
+    if (!thread) {
+      return res.status(404).json({ error: 'Thread not found' });
+    }
+    
+    res.json({
+      thread,
+      service_status: 'connected'
+    });
+  } catch (error) {
+    console.error('Error fetching email thread:', error);
+    res.status(500).json({ error: 'Failed to fetch email thread' });
+  }
+});
+
+// Analyze project context from selected email threads
+router.post('/gmail/analyze-context', authenticateToken, async (req, res) => {
+  try {
+    if (!gmailService) {
+      return res.status(400).json({ error: 'Gmail service not initialized' });
+    }
+
+    const { thread_ids } = req.body;
+    
+    if (!Array.isArray(thread_ids)) {
+      return res.status(400).json({ error: 'thread_ids must be an array' });
+    }
+
+    const context = await gmailService.analyzeProjectContext(thread_ids);
+    
+    res.json({
+      context,
+      analyzed_threads: thread_ids.length,
+      service_status: 'connected'
+    });
+  } catch (error) {
+    console.error('Error analyzing project context:', error);
+    res.status(500).json({ error: 'Failed to analyze project context' });
+  }
+});
+
+// Enhanced project creation with email context
+router.post('/projects/create-with-context', authenticateToken, async (req, res) => {
+  try {
+    const userId = (req as any).user.userId;
+    const { name, description, color, email_thread_ids, ai_enhanced } = req.body;
+
+    // Validate required fields
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        message: 'Project name is required and cannot be empty'
+      });
+    }
+
+    // Check if project name is unique
+    const isUnique = await ProjectModel.isNameUnique(userId, name.trim());
+    if (!isUnique) {
+      return res.status(409).json({
+        error: 'Project name already exists',
+        message: 'A project with this name already exists'
+      });
+    }
+
+    let enhancedDescription = description || '';
+    let projectMetadata: any = {};
+
+    // If email threads are provided, analyze them for context
+    if (email_thread_ids && Array.isArray(email_thread_ids) && email_thread_ids.length > 0 && gmailService) {
+      try {
+        const context = await gmailService.analyzeProjectContext(email_thread_ids);
+        
+        // Enhance description with AI-generated context
+        if (ai_enhanced && ragService) {
+          const aiEnhancedDescription = await ragService.enhanceProjectDescription(
+            name,
+            description || '',
+            context
+          );
+          enhancedDescription = aiEnhancedDescription;
+        } else {
+          // Basic enhancement without AI
+          enhancedDescription = description ? 
+            `${description}\n\n--- Email Context ---\n${context.summary}` : 
+            context.summary;
+        }
+
+        // Store email context in metadata
+        projectMetadata = {
+          email_context: {
+            thread_ids: email_thread_ids,
+            summary: context.summary,
+            participants: context.participants,
+            key_insights: context.keyInsights,
+            action_items: context.actionItems,
+            decisions: context.decisions,
+            next_steps: context.nextSteps,
+            timespan: context.timespan,
+            analyzed_at: new Date().toISOString()
+          }
+        };
+      } catch (contextError) {
+        console.error('Error analyzing email context:', contextError);
+        // Continue with project creation without context
+      }
+    }
+
+    const projectData = {
+      name: name.trim(),
+      description: enhancedDescription,
+      color,
+      user_id: userId,
+      metadata: projectMetadata
+    };
+
+    const newProject = await ProjectModel.create(projectData);
+
+    res.status(201).json({
+      message: 'Project created successfully with email context',
+      project: newProject,
+      context_analyzed: email_thread_ids && email_thread_ids.length > 0,
+      ai_enhanced: ai_enhanced && ragService !== null
+    });
+
+  } catch (error) {
+    console.error('Create project with context error:', error);
+    res.status(500).json({
+      error: 'Failed to create project',
+      message: 'An error occurred while creating the project with email context'
+    });
+  }
+});
+
 // Accept AI suggestions
 router.post('/suggestions/accept', authenticateToken, async (req, res) => {
   try {

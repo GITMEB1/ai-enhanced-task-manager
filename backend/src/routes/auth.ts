@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserModel as User } from '../models/User';
+import { log } from '../utils/logger';
 
 const router = express.Router();
 
@@ -29,7 +30,7 @@ export const authenticateToken = (req: express.Request, res: express.Response, n
     
     next();
   } catch (err: any) {
-    console.error('JWT verification failed:', err.message);
+    log.authAttempt('unknown', false, req.ip);
     
     // More specific error handling
     if (err.name === 'TokenExpiredError') {

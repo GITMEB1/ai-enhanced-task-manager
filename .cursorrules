@@ -1,0 +1,289 @@
+# AI-Enhanced Task Manager - Cursor Rules
+
+This repository is an AI-Enhanced Task Manager with Gmail integration, OpenAI-powered insights, and intelligent productivity features. The system is designed for production use with comprehensive AI capabilities and robust email context analysis.
+
+## Project Architecture
+
+**Frontend Stack:**
+- React 18 with TypeScript (strict mode enabled)
+- Vite for build tooling and development server
+- Tailwind CSS for styling with Radix UI components
+- Zustand for state management
+- React Hook Form for form handling
+- React Router v6 for navigation
+- Framer Motion for animations
+- Progressive Web App (PWA) capabilities
+
+**Backend Stack:**
+- Node.js with Express.js and TypeScript
+- PostgreSQL with Knex.js query builder and migrations
+- Redis for caching and session management
+- JWT authentication with bcryptjs password hashing
+- Gmail API and Google OAuth2 integration
+- OpenAI API for AI-powered insights and analysis
+- Comprehensive logging with Morgan
+
+**Core Features:**
+- Task management with AI-powered suggestions and priority assignment
+- Project organization with email context integration
+- Journal system with mood tracking and AI-generated prompts
+- Gmail email-to-task conversion with intelligent parsing
+- Real-time productivity analytics and mood correlation analysis
+- Progressive Web App with offline capabilities
+
+## Code Style and Structure Guidelines
+
+**TypeScript:**
+- Write strictly typed TypeScript code with explicit return types
+- Use interface definitions for all data structures and API responses
+- Leverage union types for status, priority, and enum-like values
+- Always define proper error types and handling
+- Use generic types for reusable components and functions
+- Prefer type assertions over any types
+
+**React Components:**
+- Use functional components with hooks exclusively (no class components)
+- Keep components under 200 lines - extract smaller focused components
+- Use custom hooks for complex state logic and API interactions
+- Implement proper error boundaries and loading states
+- Follow the compound component pattern for complex UI elements
+- Use React.memo() for expensive rendering operations
+
+**File Organization:**
+- Organize by feature domains (tasks, projects, integrations, journal)
+- Keep related components, hooks, and types in the same directory
+- Create index.ts files for clean imports
+- Use barrel exports for component libraries
+- Separate API logic into dedicated service files
+- Store types in dedicated type definition files
+
+**State Management:**
+- Use Zustand stores for global application state
+- Keep store slices focused and domain-specific
+- Implement proper error handling in store actions
+- Use React state for local component state only
+- Persist critical data using Zustand persist middleware
+
+**API Integration:**
+- Use the existing integrationAPI structure for all external service calls
+- Implement proper error handling and retry logic
+- Use loading states for all async operations
+- Cache API responses appropriately using React Query patterns
+- Handle offline scenarios gracefully with fallback data
+
+## Business Logic Guidelines
+
+**AI Integration:**
+- Always provide fallback functionality when AI services are unavailable
+- Implement graceful degradation for Gmail and OpenAI API failures
+- Use mock data patterns for development and testing
+- Validate AI-generated content before presenting to users
+- Implement proper rate limiting and quota management
+
+**Email Context Analysis:**
+- Extract actionable items from email threads using pattern recognition
+- Correlate email participants with project stakeholders
+- Generate meaningful project summaries from email content
+- Preserve email metadata for future reference and analysis
+- Implement privacy-conscious data handling
+
+**Task and Project Management:**
+- Use consistent priority and status enumerations
+- Implement proper task hierarchy and dependencies
+- Maintain project-task relationships with proper referential integrity
+- Use metadata fields for extensible feature development
+- Implement soft deletion patterns for data recovery
+
+## Security and Authentication
+
+**Data Protection:**
+- Validate all user inputs using Joi schemas
+- Sanitize data before database operations
+- Use parameterized queries to prevent SQL injection
+- Implement proper CORS policies for cross-origin requests
+- Hash passwords using bcryptjs with appropriate salt rounds
+
+**API Security:**
+- Authenticate all protected endpoints using JWT middleware
+- Implement rate limiting for API endpoints
+- Use environment variables for all sensitive configuration
+- Validate OAuth tokens and refresh tokens properly
+- Log security events and authentication failures
+
+## Database and Performance
+
+**Database Operations:**
+- Use Knex.js query builder for all database interactions
+- Implement proper migration scripts for schema changes
+- Use database indexes for frequently queried fields
+- Implement connection pooling and proper error handling
+- Use transactions for multi-table operations
+
+**Performance Optimization:**
+- Implement proper caching strategies using Redis
+- Use database pagination for large result sets
+- Optimize API response payloads by selecting only needed fields
+- Implement proper loading states and skeleton screens
+- Use React.memo and useMemo for expensive computations
+
+## Development Workflow
+
+**Code Quality:**
+- Write comprehensive TypeScript interfaces for all data structures
+- Implement proper error handling with typed error responses
+- Use consistent naming conventions (camelCase for variables, PascalCase for types)
+- Add JSDoc comments for complex business logic
+- Maintain proper separation between presentation and business logic
+
+**Testing Strategy:**
+- Write unit tests for utility functions and business logic
+- Test API endpoints with proper mock data
+- Implement component testing for critical user interactions
+- Use end-to-end tests for complete user workflows
+- Test error scenarios and edge cases thoroughly
+
+**Environment Management:**
+- Use different configurations for development, staging, and production
+- Implement proper environment variable validation
+- Use mock services for development when external APIs are unavailable
+- Maintain separate database instances for different environments
+- Document environment setup requirements clearly
+
+## Integration Patterns
+
+**Gmail API Integration:**
+- Implement proper OAuth2 flow with refresh token handling
+- Use batch API calls for efficient email processing
+- Cache email data appropriately to minimize API calls
+- Handle Gmail API rate limits and quota restrictions
+- Implement proper error handling for network failures
+
+**OpenAI API Integration:**
+- Use structured prompts for consistent AI responses
+- Implement proper token counting and cost management
+- Cache AI responses where appropriate
+- Handle API rate limits and timeout scenarios
+- Validate AI response format before processing
+
+## Logging and Monitoring
+
+**Application Logging:**
+- Use console.log, console.warn, and console.error appropriately
+- Log all external API interactions with request/response details
+- Implement structured logging with consistent format
+- Log user actions for analytics and debugging
+- Avoid logging sensitive user data or credentials
+
+**Error Handling:**
+- Implement comprehensive error boundaries in React components
+- Use consistent error response format across all API endpoints
+- Log errors with sufficient context for debugging
+- Provide user-friendly error messages
+- Implement proper fallback behaviors for service failures
+
+## UI/UX Guidelines
+
+**Design System:**
+- Use Tailwind CSS utility classes consistently
+- Follow the established color palette and spacing system
+- Implement responsive design for mobile, tablet, and desktop
+- Use Radix UI components for accessibility compliance
+- Maintain consistent typography and visual hierarchy
+
+**User Experience:**
+- Implement proper loading states for all async operations
+- Provide clear feedback for user actions
+- Use optimistic updates where appropriate
+- Implement proper form validation with helpful error messages
+- Ensure keyboard navigation works throughout the application
+
+## File Naming and Structure
+
+**Naming Conventions:**
+- Use PascalCase for React components and TypeScript interfaces
+- Use camelCase for functions, variables, and file names (except components)
+- Use kebab-case for CSS classes and HTML attributes
+- Use SCREAMING_SNAKE_CASE for environment variables and constants
+- Use descriptive names that clearly indicate purpose and scope
+
+**Import/Export Patterns:**
+- Use named exports for utility functions and hooks
+- Use default exports for React components
+- Group imports logically (React, third-party, local)
+- Use absolute imports with path mapping where configured
+- Avoid deep relative import paths (../../..)
+
+## Specific Implementation Notes
+
+**Component Patterns:**
+- Use the compound component pattern for complex UI elements like forms and modals
+- Implement proper prop interfaces with JSDoc documentation
+- Use children props for flexible component composition
+- Implement proper ref forwarding where needed
+- Use render props or custom hooks for complex state sharing
+
+**Data Fetching:**
+- Use the existing Zustand store patterns for data management
+- Implement proper optimistic updates for better user experience
+- Cache frequently accessed data appropriately
+- Handle loading and error states consistently
+- Use proper TypeScript types for all API responses
+
+**Form Handling:**
+- Use React Hook Form for all forms with proper validation schemas
+- Implement proper error display and user feedback
+- Use controlled components for complex form interactions
+- Validate data both client-side and server-side
+- Handle form submission states appropriately
+
+## Cursor AI Best Practices (Latest 2025)
+
+**Agent Mode Usage:**
+- Prefer Agent mode over Edit mode for multi-step code changes
+- Use Agent mode for complex refactoring across multiple files
+- Enable detailed instructions for complex business logic implementations
+- Let Agent mode handle file creation and cross-file dependency management
+
+**Context Management:**
+- Use @ symbol to bring relevant files into conversation context
+- Include 3-5 related files when making changes to maintain context
+- Keep conversations focused and under 10 exchanges for best results
+- Start new conversations for different feature areas or when context becomes unclear
+
+**Prompt Engineering:**
+- Write clear, detailed instructions like writing tickets for junior developers
+- Specify expected file structure and naming conventions in prompts
+- Include examples of desired patterns when requesting complex implementations
+- Use specific terminology from this codebase (Zustand stores, integrationAPI, etc.)
+
+**File Size Optimization:**
+- Prefer multiple smaller files (under 200 lines) over large monolithic files
+- Break down complex components into focused, single-purpose components
+- Create separate hook files for complex state logic
+- Use barrel exports (index.ts) for clean imports between modules
+
+**Image and Visual Context:**
+- Use images/screenshots for UI bugs, layout issues, or design references
+- Paste images directly with Ctrl/CMD+V in conversations
+- Reference UI mockups or design specs as images when implementing new features
+- Use visual context for complex data flow explanations
+
+**Commit Strategy:**
+- Commit frequently during AI-assisted development sessions
+- Create meaningful commit messages that describe AI-generated changes
+- Use git as the primary rollback mechanism rather than relying solely on Cursor checkpoints
+- Commit after successful completion of each major feature or bug fix
+
+**Testing with AI:**
+- Let AI generate comprehensive test suites for new functionality
+- Request tests for both happy path and edge cases
+- Ask for mocking strategies for external API dependencies (Gmail, OpenAI)
+- Generate tests for TypeScript interfaces and type safety
+
+**Error Handling Enhancement:**
+- Request comprehensive error boundary implementations
+- Ask for graceful fallback UI components when services are unavailable
+- Implement proper loading skeleton components for async operations
+- Generate user-friendly error messages for all failure scenarios
+
+Remember: This is a production-ready application with sophisticated AI integration. Prioritize code quality, type safety, error handling, and user experience in all implementations. Use Cursor's AI capabilities strategically - break complex tasks into focused conversations, provide rich context, and leverage Agent mode for multi-file operations. 
